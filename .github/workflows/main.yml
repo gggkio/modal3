@@ -3,7 +3,7 @@ name: Deploy to Modal
 on:
   workflow_dispatch:
   schedule:
-    - cron: '38 18 * * *'  # 每天 26 点
+    - cron: '38 18 * * *'  # 每天 18:38 UTC
 
 jobs:
   deploy:
@@ -13,7 +13,7 @@ jobs:
     env:
       MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
-      MODAL_CONFIG_DIR: /home/runner/.modal
+      # 删掉 MODAL_CONFIG_DIR，不要自己指定路径
 
     steps:
       - name: Checkout code
@@ -30,13 +30,10 @@ jobs:
       - name: Check Modal version
         run: python -c "import modal; print(modal.__version__)"
 
-      - name: Inject Modal Token
+      # ✅ 替换成官方认证命令，彻底解决 Token 格式问题
+      - name: Setup Modal Auth
         run: |
-          mkdir -p $MODAL_CONFIG_DIR
-          echo -e "[default]" > $MODAL_CONFIG_DIR/token.toml
-          echo -e "token_id = \"$MODAL_TOKEN_ID\"" >> $MODAL_CONFIG_DIR/token.toml
-          echo -e "token_secret = \"$MODAL_TOKEN_SECRET\"" >> $MODAL_CONFIG_DIR/token.toml
-          chmod 600 $MODAL_CONFIG_DIR/token.toml
+          modal token set --token-id "$MODAL_TOKEN_ID" --token-secret "$MODAL_TOKEN_SECRET"
 
       - name: Run app remotely
         run: python deploy.py --sandbox
